@@ -1,5 +1,5 @@
 const express = require('express')
-const { addToCart,removeFromCart, incrementQuantity, decrementQuantity, checkOut, clearCart} = require('../controllers/cartController')
+const { addToCart,removeFromCart, incrementQuantity, decrementQuantity, checkOut, placeCodOrder, getOrder, confirmCheckout} = require('../controllers/cartController')
 const verifyToken = require('../middlewares/verifyToken')
 const cartRouter = express.Router()
 
@@ -9,7 +9,9 @@ cartRouter.delete("/remove/:id",verifyToken,removeFromCart)
 cartRouter.post("/increment/:id",verifyToken,incrementQuantity)
 cartRouter.post("/decrement/:id",verifyToken,decrementQuantity)
 cartRouter.post("/checkout",verifyToken,checkOut)
-cartRouter.get("/clear",verifyToken,clearCart)
+cartRouter.post("/cod",verifyToken,placeCodOrder)
+cartRouter.get("/orders/:orderId",verifyToken,getOrder)
+cartRouter.post("/confirm",verifyToken,confirmCheckout)
 
 
 module.exports = cartRouter

@@ -6,13 +6,13 @@ const authRouter = require('./routes/authRoutes')
 const connectDb = require('./config/db')
 const cartRouter = require('./routes/cartRoutes')
 const app = express()
-const port = 3000
+const port = Number(process.env.PORT) || 3000
 
 connectDb()
 
 app.use(express.json())
 app.use(cors({
-    origin:[process.env.ORIGIN,'https://shopping-cart-mern-yo9j.vercel.app'],
+    origin:[process.env.ORIGIN || 'http://localhost:5173','https://shopping-cart-mern-yo9j.vercel.app'],
     credentials:true
 }))
 app.use(cookieParser())
