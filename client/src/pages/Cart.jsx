@@ -1,26 +1,25 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import CartItem from '../components/CartItem'
 import toast from "react-hot-toast"
 import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 const Cart = () => {
+  const navigate = useNavigate()
   const user = useSelector((state) => state.auth.user)
   const items = useSelector((state) => state.cart.cart)
   const totalPrice = items.reduce((total, item) => total + item.price * item.quantity, 0);
 
   const [loading, setLoading] = useState(false)
+  const [shippingAddress, setShippingAddress] = useState('')
 
   const orderNow = async () => {
     try {
       setLoading(true)
       const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/cart/checkout`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: 'include',
-        body: JSON.stringify({ items })
+        credentials: 'include'
       })
 
       const data = await res.json()
@@ -31,6 +30,34 @@ const Cart = () => {
       }
     } catch (error) {
       toast.error('Order failed: ' + error.message);
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const placeCodOrder = async () => {
+    if (!shippingAddress.trim()) {
+      toast.error('Enter a delivery address for cash on delivery.')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/cart/cod`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ shippingAddress })
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        toast.error('Order failed: ' + data.message)
+        return
+      }
+
+      navigate(`/success?order_id=${encodeURIComponent(data.orderId)}`)
+    } catch (error) {
+      toast.error('Order failed: ' + error.message)
     } finally {
       setLoading(false)
     }
@@ -127,7 +154,19 @@ const Cart = () => {
                   </div>
                 </div>
 
-                {/* Checkout Button */}
+                <label htmlFor="shipping-address" className="block text-sm font-medium text-gray-700">
+                  Delivery address (required for cash on delivery)
+                </label>
+                <textarea
+                  id="shipping-address"
+                  className="w-full rounded-xl border border-gray-300 p-3 focus:border-green-500 focus:outline-none"
+                  rows="3"
+                  maxLength="500"
+                  value={shippingAddress}
+                  onChange={(event) => setShippingAddress(event.target.value)}
+                  placeholder="Enter your full delivery address"
+                />
+
                 <button
                   className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300 shadow-lg hover:shadow-xl ${loading
                       ? 'bg-gray-400 cursor-not-allowed'
@@ -149,12 +188,18 @@ const Cart = () => {
                       <svg className='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' />
                       </svg>
-                      Secure Checkout
+                      Pay online with card
                     </div>
                   )}
                 </button>
 
-               
+                <button
+                  className="w-full rounded-xl border-2 border-green-600 px-6 py-4 text-lg font-bold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={placeCodOrder}
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : 'Place order - Cash on delivery'}
+                </button>
               </div>
             </div>
           </div>
